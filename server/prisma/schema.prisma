@@ -6,7 +6,7 @@
 
 generator client {
   provider = "prisma-client"
-  // output   = "../generated/prisma"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -24,8 +24,10 @@ model User {
   createAT DateTime @default(now())
   updateAT DateTime @updatedAt
 
-  notes   Note[]   @relation("UserNotes")
-  folders Folder[]
+  notes             Note[]             @relation("UserNotes")
+  folders           Folder[]
+  comments          Comment[]
+  noteCollaborators NoteCollaborator[]
 
   @@map("users")
 }
@@ -61,8 +63,12 @@ model Note {
   folderId String @db.ObjectId
   folders  Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
-  tags        Tag[]
-  attachments Attachment[]
+  tagId String[] @db.ObjectId
+  tags  Tag[]    @relation(fields: [tagId], references: [id])
+
+  attachments       Attachment[]
+  comments          Comment[]
+  noteCollaborators NoteCollaborator[]
 
   @@map("notes")
 }
@@ -73,8 +79,8 @@ model Tag {
   name     String   @unique
   createAT DateTime @default(now())
 
-  noteId String @db.ObjectId
-  notes  Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId String[] @db.ObjectId
+  notes  Note[]   @relation(fields: [noteId], references: [id])
 }
 
 // Attachment Model
@@ -89,5 +95,42 @@ model Attachment {
   notes  Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@map("attachments")
+}
+
+// Comment Model
+model Comment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  text     String
+  createAT DateTime @default(now())
+
+  noteId String @db.ObjectId
+  notes  Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  userId String @db.ObjectId
+  users  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// NoteCollaborator Model
+model NoteCollaborator {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  role     Role     @default(VIEWER)
+  createAt DateTime @default(now())
+
+  noteId String @db.ObjectId
+  notes  Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  userId String @db.ObjectId
+  users  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, userId])
+  @@map("note_collaborators")
+}
+
+enum Role {
+  VIEWER
+  EDITOR
+  OWNER
 }
 
