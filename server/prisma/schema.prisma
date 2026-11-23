@@ -14,3 +14,80 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User Model
+model User {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  email    String   @unique
+  password String
+  avater   String?
+  createAT DateTime @default(now())
+  updateAT DateTime @updatedAt
+
+  notes   Note[]   @relation("UserNotes")
+  folders Folder[]
+
+  @@map("users")
+}
+
+// Folder Model
+model Folder {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  createAT DateTime @default(now())
+  updateAT DateTime @updatedAt
+
+  userId String @db.ObjectId
+  users  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notes Note[]
+
+  @@map("folders")
+}
+
+// Note Model
+model Note {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  titel      String
+  content    String
+  isPinned   Boolean  @default(false)
+  isArchived Boolean  @default(false)
+  createAT   DateTime @default(now())
+  updateAT   DateTime @updatedAt
+
+  userId String @db.ObjectId
+  users  User   @relation("UserNotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  folderId String @db.ObjectId
+  folders  Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  tags        Tag[]
+  attachments Attachment[]
+
+  @@map("notes")
+}
+
+// Tag Model
+model Tag {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String   @unique
+  createAT DateTime @default(now())
+
+  noteId String @db.ObjectId
+  notes  Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+}
+
+// Attachment Model
+model Attachment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  fileUrl  String
+  fileType String
+  fileSize Int
+  createAT DateTime @default(now())
+
+  noteId String @db.ObjectId
+  notes  Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
